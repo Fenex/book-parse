@@ -1,0 +1,19 @@
+FFI bindings & .NET wrapper (book_parse library)
+================================================
+
+
+BookParse
+---------
+
+This is a FFI bindings to `book_parse` native library (located in `/lib`)
+and dotnet wrapper for its. This project run over netstandard 2.1,
+thus it's compatibile with all dotnet platforms: .NET Core, .NET Framework
+and others. You need add this project into your solution to use this wrapper.
+Do not forget copy the native library based on your arch and OS.
+
+
+BookParse.Shell
+---------------
+
+Sample of use `book_parse` library via `BookParse` wrapper with dotnet:
+parses a text (located in `Texts.cs`) to show how it works.
