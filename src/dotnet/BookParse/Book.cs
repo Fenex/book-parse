@@ -7,10 +7,9 @@ namespace BookParse
 {
     public class Book : IDisposable
     {
-
         /// Storages a pointer to object that contains all data of parsed text.
-        /// All
-        protected readonly IntPtr _p_book = IntPtr.Zero;
+        /// Do not use this variable anywhere except a constructor\destructor.
+        protected IntPtr _p_book = IntPtr.Zero;
 
         public IntPtr p_book
         {
@@ -87,6 +86,7 @@ namespace BookParse
             if (_p_book != IntPtr.Zero)
             {
                 FFI.Binding.Dispose(_p_book);
+                _p_book = IntPtr.Zero;
             }
         }
 
@@ -99,13 +99,8 @@ namespace BookParse
 
     public class UninitBookException : Exception
     {
-        public UninitBookException() : base("The book is not initialized")
-        {
-        }
+        public UninitBookException() : base("The book is not initialized") { }
     }
 
-    public class BookIsEmptyException : Exception
-    {
-
-    }
+    public class BookIsEmptyException : Exception { }
 }

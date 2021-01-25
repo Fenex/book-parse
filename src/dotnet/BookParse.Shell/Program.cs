@@ -6,11 +6,6 @@ namespace BookParse.Shell
 {
     class Program
     {
-        static void Parse(String str)
-        {
-
-        }
-
         static void Main(string[] args)
         {
             var random = new Random();
