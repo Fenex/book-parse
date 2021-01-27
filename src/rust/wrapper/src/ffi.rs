@@ -4,8 +4,38 @@ use std::{
 };
 
 pub type BookRaw = *mut c_void;
-pub type ParagraphId = c_uint;
-pub type SentenceId = c_uint;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[repr(C)]
+pub struct ParagraphId(c_uint);
+
+impl From<c_uint> for ParagraphId {
+    fn from(index: c_uint) -> Self {
+        ParagraphId(index)
+    }
+}
+
+impl From<ParagraphId> for c_uint {
+    fn from(index: ParagraphId) -> Self {
+        index.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[repr(C)]
+pub struct SentenceId(c_uint);
+
+impl From<c_uint> for SentenceId {
+    fn from(index: c_uint) -> Self {
+        SentenceId(index)
+    }
+}
+
+impl From<SentenceId> for c_uint {
+    fn from(index: SentenceId) -> Self {
+        index.0
+    }
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(C)]

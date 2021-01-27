@@ -1,10 +1,10 @@
-[package]
-name = "book-parse-wrapper"
-version = "0.1.0"
-authors = ["Vitaliy Busko <vitaliy.opensource@gmail.com>"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+members = [
+    "shell",
+    "wrapper",
+]
 
-[dependencies]
-libloading = "0.6.7"
+[profile.release]
+lto = true
+codegen-units = 1

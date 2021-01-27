@@ -1,0 +1,8 @@
+This is a wrapper of `book_parse` native labrary for Rust language.
+
+You need add `wrapper` project as dependency in your `Cargo.toml`
+to use this wrapper. Do not forget copy the native library based
+on your arch and OS.
+
+`shell` project is a binary application that show how to use
+`wrapper` project.
