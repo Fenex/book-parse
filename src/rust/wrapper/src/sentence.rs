@@ -1,4 +1,4 @@
-use std::{fmt::Debug, rc::Rc};
+use std::{fmt::Debug, os::raw::c_uint, sync::Arc};
 
 use crate::{
     ffi::{SentenceId, SentenceInfo},
@@ -7,20 +7,34 @@ use crate::{
 
 pub struct Sentence {
     index: SentenceId,
-    ffi: Rc<Wrapper>,
+    ffi: Arc<Wrapper>,
+    info: SentenceInfo,
 }
 
 impl Sentence {
-    pub(super) fn new(ffi: Rc<Wrapper>, index: SentenceId) -> Self {
-        Self { index, ffi }
+    pub(super) fn new(ffi: Arc<Wrapper>, index: SentenceId) -> Self {
+        let info = ffi.sentence_info(index);
+        Self { index, ffi, info }
     }
 
     pub fn info(&self) -> SentenceInfo {
-        self.ffi.sentence_info(self.index)
+        self.info
     }
 
     pub fn text(&self) -> Option<String> {
         self.ffi.sentence_text(self.index)
+    }
+
+    /// Returns `true` if the sentence has the first at its paragraph
+    pub fn is_first(&self) -> bool {
+        self.info().s_number == 0
+    }
+
+    /// Returns `true` if the sentence has the last position its paragraph
+    pub fn is_last(&self) -> bool {
+        let si = self.ffi.sentence_info(self.index);
+        let pi = self.ffi.paragraph_info(si.p_index);
+        c_uint::from(pi.sentence_first) + si.s_number == self.index.into()
     }
 }
 

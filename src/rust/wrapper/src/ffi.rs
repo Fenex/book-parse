@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     ops::{Add, AddAssign},
     os::raw::{c_uint, c_void},
 };
@@ -21,6 +22,12 @@ impl From<ParagraphId> for c_uint {
     }
 }
 
+impl Display for ParagraphId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 #[repr(C)]
 pub struct SentenceId(c_uint);
@@ -34,6 +41,12 @@ impl From<c_uint> for SentenceId {
 impl From<SentenceId> for c_uint {
     fn from(index: SentenceId) -> Self {
         index.0
+    }
+}
+
+impl Display for SentenceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
