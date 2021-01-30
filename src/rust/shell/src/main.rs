@@ -36,7 +36,7 @@ struct Opts {
 
     #[clap(
         long,
-        about = "Every splited part should contains at least this count symbols",
+        about = "Every splitted part should contains at least this count symbols",
         default_value = "200"
     )]
     min: u32,
@@ -49,11 +49,26 @@ struct Opts {
     max: u32,
 
     #[clap(
+        short,
         long,
         about = "Starts new parts if sentence is equal to this value",
         long_about = "Parsed text will be splitted by paragraphes that contain a single sentence with given string."
     )]
     split_by_paragraph: Option<String>,
+
+    #[clap(
+        short,
+        long,
+        long_about = "Sets template for parts separator to inserting its instead of empty rows. Default is: `### {N} ###` if this argument was passed."
+    )]
+    parts_separator: Option<Option<String>>,
+
+    #[clap(
+        long,
+        about = "Inserts sentences' index in output",
+        long_about = "Inserts sentences' index into output. Sentences' index format: (P:N:U) where P: current `part` count number, N: sentence's count number inside paragraph, U: sentence's count number inside the book (it's also an unique index)"
+    )]
+    view_index_sentence: bool,
 
     #[clap(long, about = "Show verbose info when splitting stady is active")]
     verbose_splitting: bool,
@@ -84,7 +99,7 @@ fn process(action: &str) -> (JoinHandle<()>, Sender<&'static str>) {
 
     let handle = ::tokio::spawn(async move {
         let mut stdout = ::tokio::io::stdout();
-        let status = [b"|", b"/", b"-", b"\\"];
+        let status = [br"|", br"/", br"-", br"\"];
         let mut i = 0;
         stdout.write(action.as_bytes()).await.unwrap();
 
@@ -129,6 +144,7 @@ async fn parse_book(
     let book = Book::from_utf8(&text)?;
     tx.send("ok").unwrap();
     handle.await.unwrap();
+
     println!(
         "Found: {} sentences, {} paragraphes",
         book.info().sentences,
@@ -160,11 +176,14 @@ async fn parse_book(
             let s_index = s.info().index;
 
             if u32::from(s_index) % 100 == 0 {
-                println!("analyzing: {} of {}", s_index, book.info().sentences);
+                println!("\ranalyzing: {} of {}", s_index, book.info().sentences);
             }
         }
 
         if is_force_split(&s) {
+            // FIXME: if `current_part`'s len is less than `opts.min`,
+            // do add `current_part` in the last part of `parts`
+            // instead of appending.
             let tmp = current_part.drain(..).collect::<Vec<_>>();
             parts.push(tmp);
             continue;
@@ -198,18 +217,33 @@ async fn parse_book(
 
     let (handle, tx) = process("Mapping into strings...".into());
 
-    let parts = parts.iter().map(|p| {
-        p.iter()
-            .map(|s| (s.is_first(), s.text()))
-            .filter(|(_, text)| text.is_some())
-            .map(|(is_first, text)| {
-                if is_first {
-                    format!("\r\n{}", text.unwrap())
-                } else {
-                    format!(" {}", text.unwrap())
-                }
-            })
-    });
+    let parts = parts
+        .iter()
+        .map(|p| p.iter().filter(|&s| s.text().is_some()));
+
+    let mut out = vec![];
+
+    for (pi, p) in parts.enumerate() {
+        let replacer = |input_str: &str| -> String { input_str.replace("{}", &pi.to_string()) };
+
+        out.push(match &opts.parts_separator {
+            Some(Some(s)) => vec!["\r\n", &replacer(s), "\r\n"].join(""),
+            Some(None) => format!("\r\n## {} ##\r\n", pi),
+            None => String::from("\r\n\r\n"),
+        });
+
+        for (si, s) in p.enumerate() {
+            if si > 0 {
+                out.push(String::from(if s.is_first() { "\r\n" } else { " " }));
+            }
+
+            if opts.view_index_sentence {
+                let info = s.info();
+                out.push(format!("({}:{}:{}) ", si, info.s_number, info.index));
+            }
+            out.push(s.text().unwrap());
+        }
+    }
 
     tx.send("ok").unwrap();
     handle.await.unwrap();
@@ -219,13 +253,10 @@ async fn parse_book(
         writer_status = Some(process(&format!("Writing into file: {}", path)));
     }
 
-    for p in parts {
-        writer.write("\r\n".as_bytes())?;
-        for s in p {
-            writer.write(s.as_bytes())?;
-        }
-        writer.flush()?;
+    for data in out {
+        writer.write(data.as_bytes())?;
     }
+    writer.flush()?;
 
     if let Some((handle, tx)) = writer_status {
         tx.send("ok").unwrap();
