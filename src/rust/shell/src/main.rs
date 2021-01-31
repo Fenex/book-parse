@@ -23,27 +23,27 @@ use bpw::*;
     author = crate_authors!()
 )]
 struct Opts {
-    #[clap(about = "Source file that will be parsed")]
+    #[clap(about = "Source file that will be parsed.")]
     source: String,
 
     #[clap(
         long,
         short,
-        about = "Path to output file to save parsed text",
+        about = "Path to output file to save parsed text.",
         long_about = "Path to output file to save parsed text. If this options is empty, parsed data will be written into stdout."
     )]
     output: Option<String>,
 
     #[clap(
         long,
-        about = "Every splitted part should contains at least this count symbols",
+        about = "Every splitted part should contains at least this count symbols.",
         default_value = "200"
     )]
     min: u32,
 
     #[clap(
         long,
-        about = "Recommended maximum size of splitted parts",
+        about = "Recommended maximum size of splitted parts.",
         default_value = "600"
     )]
     max: u32,
@@ -51,7 +51,7 @@ struct Opts {
     #[clap(
         short,
         long,
-        about = "Starts new parts if sentence is equal to this value",
+        about = "Starts new parts if sentence is equal to this value.",
         long_about = "Parsed text will be splitted by paragraphes that contain a single sentence with given string."
     )]
     split_by_paragraph: Option<String>,
@@ -63,10 +63,17 @@ struct Opts {
     )]
     parts_separator: Option<Option<String>>,
 
+
+    #[clap(
+        short,
+        about = "Starts count a parsed part's number from 0 instead of 1."
+    )]
+    count_parts_from_zero: bool,
+
     #[clap(
         long,
-        about = "Inserts sentences' index in output",
-        long_about = "Inserts sentences' index into output. Sentences' index format: (P:N:U) where P: current `part` count number, N: sentence's count number inside paragraph, U: sentence's count number inside the book (it's also an unique index)"
+        about = "Inserts sentences' index in output.",
+        long_about = "Inserts sentences' index into output. Sentences' index format: (P:N:U) where P: current `part` count number, N: sentence's count number inside paragraph, U: sentence's count number inside the book (it's also an unique index)."
     )]
     view_index_sentence: bool,
 
@@ -242,11 +249,12 @@ async fn parse_book(
     let mut out = vec![];
 
     for (pi, p) in parts.enumerate() {
-        let replacer = |input_str: &str| -> String { input_str.replace("{}", &pi.to_string()) };
+        let view_pi = pi + if opts.count_parts_from_zero { 1 } else { 0 };
+        let replacer = |input_str: &str| -> String { input_str.replace("{}", &view_pi.to_string()) };
 
         out.push(match &opts.parts_separator {
             Some(Some(s)) => vec!["\r\n", &replacer(s), "\r\n"].join(""),
-            Some(None) => format!("\r\n## {} ##\r\n", pi),
+            Some(None) => format!("\r\n## {} ##\r\n", view_pi),
             None => String::from("\r\n\r\n"),
         });
 
