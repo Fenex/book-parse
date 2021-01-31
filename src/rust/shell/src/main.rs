@@ -59,7 +59,7 @@ struct Opts {
     #[clap(
         short,
         long,
-        long_about = "Sets template for parts separator to inserting its instead of empty rows. Default is: `### {N} ###` if this argument was passed."
+        long_about = "Sets template for parts separator to inserting its instead of empty rows. Default is: `## {} ##` if this argument was passed without a value."
     )]
     parts_separator: Option<Option<String>>,
 
@@ -153,7 +153,7 @@ async fn parse_book(
 
     let (handle, tx) = process("Splitting parts... ".into());
 
-    let mut parts = vec![];
+    let mut parts: Vec<Vec<Sentence>> = vec![];
     let mut current_part = vec![];
 
     let symbols = |sentences: &Vec<Sentence>| {
@@ -171,6 +171,8 @@ async fn parse_book(
         },
     };
 
+    let mut is_last_force_splitted = false;
+
     for s in book.sentences() {
         if opts.verbose_splitting {
             let s_index = s.info().index;
@@ -181,30 +183,46 @@ async fn parse_book(
         }
 
         if is_force_split(&s) {
-            // FIXME: if `current_part`'s len is less than `opts.min`,
-            // do add `current_part` in the last part of `parts`
-            // instead of appending.
-            let tmp = current_part.drain(..).collect::<Vec<_>>();
-            parts.push(tmp);
-            continue;
-        }
+            let current_part_len = {
+                let symbols: u32 = current_part
+                    .iter()
+                    .map(|s: &Sentence| s.info().size.symbols)
+                    .sum();
+                (match current_part.len() as u32 {
+                    sentence_count if sentence_count > 1 => symbols + sentence_count - 1,
+                    sentence_count => sentence_count,
+                }) as c_uint
+            };
 
-        let chars_sentence = s.info().size.symbols;
-        let chars_part = symbols(&current_part);
+            match (
+                current_part_len < opts.min && !is_last_force_splitted,
+                parts.last_mut(),
+            ) {
+                (true, Some(last)) => last.append(&mut current_part),
+                _ => parts.push(current_part.drain(..).collect::<Vec<_>>()),
+            }
 
-        if chars_part < opts.min {
-            current_part.push(s);
-        } else if chars_part + chars_sentence > opts.max {
-            let tmp = current_part.drain(..).collect::<Vec<_>>();
-            parts.push(tmp);
-            current_part.push(s);
+            is_last_force_splitted = true;
         } else {
-            current_part.push(s);
-        }
+            let chars_sentence = s.info().size.symbols;
+            let chars_part = symbols(&current_part);
 
-        if symbols(&current_part) > opts.max {
-            let tmp = current_part.drain(..).collect::<Vec<_>>();
-            parts.push(tmp);
+            if chars_part < opts.min {
+                current_part.push(s);
+            } else if chars_part + chars_sentence > opts.max {
+                let tmp = current_part.drain(..).collect::<Vec<_>>();
+                parts.push(tmp);
+                current_part.push(s);
+            } else {
+                current_part.push(s);
+            }
+
+            if symbols(&current_part) > opts.max {
+                let tmp = current_part.drain(..).collect::<Vec<_>>();
+                parts.push(tmp);
+            }
+
+            is_last_force_splitted = false;
         }
     }
 

@@ -1,6 +1,6 @@
 [package]
 name = "book-parse-shell"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Vitaliy Busko <vitaliy.opensource@gmail.com>"]
 edition = "2018"
 
