@@ -63,7 +63,6 @@ struct Opts {
     )]
     parts_separator: Option<Option<String>>,
 
-
     #[clap(
         short,
         about = "Starts count a parsed part's number from 0 instead of 1."
@@ -147,7 +146,7 @@ async fn parse_book(
     mut writer: impl Write,
     opts: &Opts,
 ) -> Result<(), Box<dyn std::error::Error + 'static>> {
-    let (handle, tx) = process("Parsing a book... ".into());
+    let (handle, tx) = process("Parsing a book... ");
     let book = Book::from_utf8(&text)?;
     tx.send("ok").unwrap();
     handle.await.unwrap();
@@ -158,7 +157,7 @@ async fn parse_book(
         book.info().paragraphes
     );
 
-    let (handle, tx) = process("Splitting parts... ".into());
+    let (handle, tx) = process("Splitting parts... ");
 
     let mut parts: Vec<Vec<Sentence>> = vec![];
     let mut current_part = vec![];
@@ -240,7 +239,7 @@ async fn parse_book(
     tx.send("ok").unwrap();
     handle.await.unwrap();
 
-    let (handle, tx) = process("Mapping into strings...".into());
+    let (handle, tx) = process("Mapping into strings...");
 
     let parts = parts
         .iter()
@@ -250,7 +249,7 @@ async fn parse_book(
 
     for (pi, p) in parts.enumerate() {
         let view_pi = pi + if opts.count_parts_from_zero { 1 } else { 0 };
-        let replacer = |input_str: &str| -> String { input_str.replace("{}", &view_pi.to_string()) };
+        let replacer = |input_str: &str| input_str.replace("{}", &view_pi.to_string());
 
         out.push(match &opts.parts_separator {
             Some(Some(s)) => vec!["\r\n", &replacer(s), "\r\n"].join(""),
