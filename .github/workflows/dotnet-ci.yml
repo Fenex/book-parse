@@ -1,0 +1,15 @@
+on: [push, pull_request]
+
+name: CI\.NET
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      LD_LIBRARY_PATH: ./lib/x86_64-unknown-linux-gnu
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.x'
+    - run: dotnet test ./src/dotnet/book-parse-bindings.sln

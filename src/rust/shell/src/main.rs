@@ -279,7 +279,7 @@ async fn parse_book(
     }
 
     for data in out {
-        writer.write(data.as_bytes())?;
+        writer.write_all(data.as_bytes())?;
     }
     writer.flush()?;
 
