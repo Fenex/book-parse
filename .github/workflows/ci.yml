@@ -26,11 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: cargo build --manifest-path=./src/rust/Cargo.toml --release
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: bps ${{ matrix.os }}
           path: |
             ./src/rust/target/release/book-parse-shell.exe
             ./src/rust/target/release/book-parse-shell
+          if-no-files-found: ignore
 
 
