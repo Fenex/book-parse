@@ -1,0 +1,36 @@
+on: [push, pull_request]
+
+name: Continuous integration
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: cargo fmt --manifest-path=./rust/src/Cargo.toml --all -- --check
+
+  clippy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - run: cargo clippy --manifest-path=./src/rust/Cargo.toml --workspace -- -D warnings
+
+  rust-compile:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - run: cargo build --manifest-path=./src/rust/Cargo.toml --release
+      - uses: actions/upload-artifact@v1
+        with:
+          name: bps ${{ matrix.os }}
+          path: |
+            ./src/rust/target/release/book-parse-shell.exe
+            ./src/rust/target/release/book-parse-shell
+
+
