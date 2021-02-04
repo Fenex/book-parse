@@ -12,6 +12,4 @@ jobs:
     - uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '5.0.x'
-    steps:
-      - uses: actions/checkout@v2
-      - run: dotnet test ./src/dotnet/book-parse-bindings.sln
+    - run: dotnet test ./src/dotnet/book-parse-bindings.sln
